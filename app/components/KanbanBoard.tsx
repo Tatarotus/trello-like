@@ -45,18 +45,11 @@ function BoardColumn({
     const trimmedTitle = listTitle.trim();
 
     if (trimmedTitle === "") {
-      // 3. YOUR IDEA: If the name is empty, delete the whole list!
       onDeleteList(list.id);
     } else if (trimmedTitle !== list.title) {
       onRenameList(list.id, trimmedTitle);
     } else {
-      setListTitle(list.title); // Revert if they didn't change anything
-    }
-
-    if (listTitle.trim() !== list.title && listTitle.trim() !== "") {
-      onRenameList(list.id, listTitle);
-    } else {
-      setListTitle(list.title); // Revert if empty
+      setListTitle(list.title); 
     }
   };
 
@@ -71,12 +64,12 @@ function BoardColumn({
   };
 
   return (
-    <div className="bg-slate-200/50 w-80 p-3 rounded-xl flex-shrink-0 flex flex-col">
-      <div className="mb-3 px-2 flex justify-between items-center h-8">
+    <div className="bg-slate-200/60 w-80 p-3 rounded-2xl flex-shrink-0 flex flex-col h-full max-h-full border border-slate-200/50 shadow-sm">
+      <div className="mb-4 px-2.5 pt-1.5 flex justify-between items-center group/title h-9">
         {isEditingTitle ? (
           <input
             autoFocus
-            className="font-semibold text-slate-700 bg-white px-2 py-1 rounded border-2 border-blue-500 outline-none w-full mr-2"
+            className="font-bold text-slate-800 bg-white px-2 py-1 rounded-lg border-2 border-blue-500 outline-none w-full mr-2 shadow-sm text-sm"
             value={listTitle}
             onChange={(e) => setListTitle(e.target.value)}
             onBlur={handleRenameSubmit}
@@ -85,17 +78,17 @@ function BoardColumn({
         ) : (
           <h3 
             onClick={() => setIsEditingTitle(true)}
-            className="font-semibold text-slate-700 cursor-pointer hover:bg-slate-300/50 px-2 py-1 -ml-2 rounded flex-1 truncate transition"
+            className="font-bold text-slate-700 cursor-pointer hover:bg-white/50 px-2 py-1 -ml-2 rounded-lg flex-1 truncate transition-all text-sm uppercase tracking-wide"
           >
             {list.title}
           </h3>
         )}
-        <span className="text-slate-400 font-normal text-sm ml-2">
+        <span className="text-slate-400 font-bold text-xs ml-2 bg-slate-300/40 w-6 h-6 rounded-full flex items-center justify-center shrink-0">
           {list.tasks.length}
         </span>
       </div>
       
-      <div ref={setNodeRef} className="flex-1 flex flex-col gap-2 min-h-[50px]">
+      <div ref={setNodeRef} className="flex-1 flex flex-col gap-2.5 min-h-[50px] overflow-y-auto pr-1 -mr-1 custom-scrollbar">
         <SortableContext items={list.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {list.tasks.map((task) => (
             <TaskCard 
@@ -108,50 +101,52 @@ function BoardColumn({
         </SortableContext>
       </div>
       
-      {isAdding ? (
-        <form onSubmit={handleSubmit} className="mt-2">
-          <textarea
-            autoFocus
-            className="w-full p-2 rounded-lg border-none shadow-sm resize-none focus:ring-2 focus:ring-blue-500 text-sm mb-2 text-slate-700"
-            rows={2}
-            placeholder="Enter a title for this card..."
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
-              }
-            }}
-          />
-          <div className="flex gap-2 items-center">
-            <button type="submit" className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-700 transition">
-              Add card
-            </button>
-            <button type="button" onClick={() => setIsAdding(false)} className="text-slate-500 hover:text-slate-800 p-1 text-lg">
-              ×
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button 
-          onClick={() => setIsAdding(true)}
-          className="w-full mt-2 text-left px-2 py-2 text-slate-500 hover:bg-slate-300/50 hover:text-slate-700 rounded text-sm transition font-medium flex items-center gap-1"
-        >
-          <span>+</span> Add a card
-        </button>
-      )}
+      <div className="mt-3">
+        {isAdding ? (
+          <form onSubmit={handleSubmit} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+            <textarea
+              autoFocus
+              className="w-full p-2.5 rounded-lg border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm mb-2 text-slate-700 resize-none placeholder:text-slate-400"
+              rows={2}
+              placeholder="Enter a title for this card..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
+            />
+            <div className="flex gap-2 items-center">
+              <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition shadow-sm active:scale-95">
+                Add Card
+              </button>
+              <button type="button" onClick={() => setIsAdding(false)} className="text-slate-400 hover:text-slate-700 p-1 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button 
+            onClick={() => setIsAdding(true)}
+            className="w-full text-left px-3 py-2.5 text-slate-500 hover:bg-white/60 hover:text-slate-900 rounded-xl text-xs transition-all font-bold flex items-center gap-2 group shadow-sm bg-transparent border border-transparent hover:border-slate-200"
+          >
+            <span className="w-5 h-5 flex items-center justify-center rounded-md bg-slate-300/40 text-lg leading-none group-hover:bg-blue-500 group-hover:text-white transition-colors">+</span> 
+            ADD A CARD
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 // 2. Main KanbanBoard Component (Handles the global data and database syncing)
-export default function KanbanBoard({ initialLists }: { initialLists: List[] }) {
+export default function KanbanBoard({ initialLists, boardId }: { initialLists: List[], boardId: string }) {
   const [lists, setLists] = useState<List[]>(initialLists);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Moved these up to the parent!
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
 
@@ -225,7 +220,6 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
     }
   };
 
-  // The missing List rename handler!
   const handleRenameList = async (listId: string, newTitle: string) => {
     setLists(prev => prev.map(list => 
       list.id === listId ? { ...list, title: newTitle } : list
@@ -235,7 +229,6 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
     if (!result.success) setLists(initialLists); 
   };
 
-  // The missing List add handler!
   const handleAddList = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newListTitle.trim()) {
@@ -251,7 +244,7 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
     setNewListTitle("");
     setIsAddingList(false);
 
-    const result = await createList(newListTitle, newOrder);
+    const result = await createList(newListTitle, newOrder, boardId);
 
     if (result.success && result.list) {
       setLists(prev => prev.map(l => l.id === tempId ? { ...l, id: result.list.id } : l));
@@ -261,14 +254,12 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
   };
 
   const handleDeleteList = async (listId: string) => {
-    // Optimistic UI: instantly remove the list from the screen
     setLists(prevLists => prevLists.filter(list => list.id !== listId));
 
-    // Background Database update
     const result = await deleteList(listId);
     if (!result.success) {
       console.error("Failed to delete list");
-      setLists(initialLists); // Rollback if SQLite fails
+      setLists(initialLists); 
     }
   };
 
@@ -338,7 +329,7 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 items-start overflow-x-auto pb-4 h-full">
+      <div className="flex gap-6 items-start overflow-x-auto h-full px-8 py-8 scrollbar-hide">
         {lists.map((list) => (
           <BoardColumn 
             key={list.id} 
@@ -352,29 +343,30 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
 
         <div className="w-80 flex-shrink-0">
           {isAddingList ? (
-            <form onSubmit={handleAddList} className="bg-slate-200/50 p-3 rounded-xl flex flex-col gap-2">
+            <form onSubmit={handleAddList} className="bg-white p-4 rounded-2xl flex flex-col gap-3 shadow-md border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
               <input
                 autoFocus
-                className="w-full p-2 rounded-lg border-2 border-blue-500 outline-none shadow-sm text-sm text-slate-700"
+                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm text-sm text-slate-700 placeholder:text-slate-400 font-medium"
                 placeholder="Enter list title..."
                 value={newListTitle}
                 onChange={(e) => setNewListTitle(e.target.value)}
               />
               <div className="flex gap-2 items-center">
-                <button type="submit" className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-700 transition">
-                  Add list
+                <button type="submit" className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-sm active:scale-95 uppercase tracking-wider">
+                  Create List
                 </button>
-                <button type="button" onClick={() => setIsAddingList(false)} className="text-slate-500 hover:text-slate-800 p-1 text-lg">
-                  ×
+                <button type="button" onClick={() => setIsAddingList(false)} className="text-slate-400 hover:text-slate-700 p-2 transition">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
               </div>
             </form>
           ) : (
             <button 
               onClick={() => setIsAddingList(true)}
-              className="w-full bg-white/50 border border-slate-300/50 hover:bg-slate-200/50 text-slate-600 font-medium p-3 rounded-xl text-left transition flex items-center gap-2"
+              className="w-full bg-slate-200/50 border border-dashed border-slate-300/80 hover:bg-slate-200 hover:border-slate-400 text-slate-600 font-bold p-4 rounded-2xl text-left transition-all flex items-center gap-3 group text-xs tracking-widest uppercase"
             >
-              <span className="text-lg leading-none">+</span> Add another list
+              <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-300/50 text-xl leading-none group-hover:bg-blue-500 group-hover:text-white transition-all">+</span> 
+              Add another list
             </button>
           )}
         </div>
@@ -382,7 +374,7 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
 
       <DragOverlay>
         {activeTask ? (
-          <div className="opacity-90 rotate-2 scale-105 transition-transform cursor-grabbing shadow-xl">
+          <div className="opacity-90 rotate-2 scale-105 transition-all cursor-grabbing shadow-2xl">
             <TaskCard id={activeTask.id} title={activeTask.title} />
           </div>
         ) : null}

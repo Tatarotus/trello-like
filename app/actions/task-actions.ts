@@ -74,7 +74,7 @@ export async function updateListTitle(listId: string, newTitle: string) {
   }
 }
 
-export async function createList(title: string, order: number) {
+export async function createList(title: string, order: number, boardId: string) {
   try {
     const newList = await db
       .insert(lists)
@@ -82,6 +82,7 @@ export async function createList(title: string, order: number) {
         id: crypto.randomUUID(),
         title,
         order,
+        boardId,
       })
       .returning();
     
