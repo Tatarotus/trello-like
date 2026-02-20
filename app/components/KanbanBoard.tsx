@@ -64,12 +64,12 @@ function BoardColumn({
   };
 
   return (
-    <div className="bg-slate-200/60 w-80 p-3 rounded-2xl flex-shrink-0 flex flex-col h-full max-h-full border border-slate-200/50 shadow-sm">
-      <div className="mb-4 px-2.5 pt-1.5 flex justify-between items-center group/title h-9">
+    <div className="bg-slate-200 w-80 p-5 rounded-2xl flex-shrink-0 flex flex-col h-full max-h-full border-none shadow-inner">
+      <div className="mb-6 px-1 flex justify-between items-center h-10">
         {isEditingTitle ? (
           <input
             autoFocus
-            className="font-bold text-slate-800 bg-white px-2 py-1 rounded-lg border-2 border-blue-500 outline-none w-full mr-2 shadow-sm text-sm"
+            className="font-black text-slate-800 bg-white px-3 py-2 rounded-xl shadow-sm outline-none w-full mr-2 text-sm"
             value={listTitle}
             onChange={(e) => setListTitle(e.target.value)}
             onBlur={handleRenameSubmit}
@@ -78,17 +78,17 @@ function BoardColumn({
         ) : (
           <h3 
             onClick={() => setIsEditingTitle(true)}
-            className="font-bold text-slate-700 cursor-pointer hover:bg-white/50 px-2 py-1 -ml-2 rounded-lg flex-1 truncate transition-all text-sm uppercase tracking-wide"
+            className="text-xs font-black tracking-widest text-slate-600 cursor-pointer hover:bg-white/50 px-3 py-2 -ml-3 rounded-xl flex-1 truncate transition-all uppercase"
           >
             {list.title}
           </h3>
         )}
-        <span className="text-slate-400 font-bold text-xs ml-2 bg-slate-300/40 w-6 h-6 rounded-full flex items-center justify-center shrink-0">
+        <span className="text-slate-500 font-black text-[10px] ml-2 bg-slate-300 w-6 h-6 rounded-lg flex items-center justify-center shrink-0 shadow-sm uppercase">
           {list.tasks.length}
         </span>
       </div>
       
-      <div ref={setNodeRef} className="flex-1 flex flex-col gap-2.5 min-h-[50px] overflow-y-auto pr-1 -mr-1 custom-scrollbar">
+      <div ref={setNodeRef} className="flex-1 flex flex-col gap-4 min-h-[50px] overflow-y-auto pr-1 -mr-1 custom-scrollbar">
         <SortableContext items={list.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {list.tasks.map((task) => (
             <TaskCard 
@@ -101,14 +101,14 @@ function BoardColumn({
         </SortableContext>
       </div>
       
-      <div className="mt-3">
+      <div className="mt-4">
         {isAdding ? (
-          <form onSubmit={handleSubmit} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+          <form onSubmit={handleSubmit} className="bg-white p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-2 duration-300">
             <textarea
               autoFocus
-              className="w-full p-2.5 rounded-lg border-0 ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm mb-2 text-slate-700 resize-none placeholder:text-slate-400"
-              rows={2}
-              placeholder="Enter a title for this card..."
+              className="w-full p-3 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500/30 outline-none text-sm mb-3 text-slate-700 resize-none placeholder:text-slate-400 font-bold border-none shadow-inner"
+              rows={3}
+              placeholder="What needs to be done?"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -119,21 +119,21 @@ function BoardColumn({
               }}
             />
             <div className="flex gap-2 items-center">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition shadow-sm active:scale-95">
-                Add Card
+              <button type="submit" className="flex-1 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-black hover:bg-blue-700 transition shadow-sm active:scale-95 uppercase tracking-wider">
+                Add Task
               </button>
-              <button type="button" onClick={() => setIsAdding(false)} className="text-slate-400 hover:text-slate-700 p-1 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              <button type="button" onClick={() => setIsAdding(false)} className="text-slate-400 hover:text-slate-700 p-2 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
           </form>
         ) : (
           <button 
             onClick={() => setIsAdding(true)}
-            className="w-full text-left px-3 py-2.5 text-slate-500 hover:bg-white/60 hover:text-slate-900 rounded-xl text-xs transition-all font-bold flex items-center gap-2 group shadow-sm bg-transparent border border-transparent hover:border-slate-200"
+            className="w-full text-left px-4 py-3.5 text-slate-500 hover:bg-white hover:text-slate-900 rounded-2xl text-[10px] tracking-widest transition-all font-black flex items-center gap-3 group shadow-sm bg-slate-300/30 uppercase"
           >
-            <span className="w-5 h-5 flex items-center justify-center rounded-md bg-slate-300/40 text-lg leading-none group-hover:bg-blue-500 group-hover:text-white transition-colors">+</span> 
-            ADD A CARD
+            <span className="w-7 h-7 flex items-center justify-center rounded-xl bg-slate-400/20 text-xl leading-none group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">+</span> 
+            Add a card
           </button>
         )}
       </div>
@@ -329,7 +329,7 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 items-start overflow-x-auto h-full px-8 py-8 scrollbar-hide">
+      <div className="flex gap-8 items-start overflow-x-auto h-full px-10 py-10 scrollbar-hide">
         {lists.map((list) => (
           <BoardColumn 
             key={list.id} 
@@ -343,30 +343,30 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
 
         <div className="w-80 flex-shrink-0">
           {isAddingList ? (
-            <form onSubmit={handleAddList} className="bg-white p-4 rounded-2xl flex flex-col gap-3 shadow-md border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <form onSubmit={handleAddList} className="bg-white p-6 rounded-2xl flex flex-col gap-4 shadow-xl border-none animate-in fade-in zoom-in-95 duration-300">
               <input
                 autoFocus
-                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm text-sm text-slate-700 placeholder:text-slate-400 font-medium"
-                placeholder="Enter list title..."
+                className="w-full p-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-blue-500/30 outline-none shadow-inner text-sm text-slate-800 placeholder:text-slate-400 font-bold"
+                placeholder="List title..."
                 value={newListTitle}
                 onChange={(e) => setNewListTitle(e.target.value)}
               />
               <div className="flex gap-2 items-center">
-                <button type="submit" className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-sm active:scale-95 uppercase tracking-wider">
+                <button type="submit" className="flex-1 bg-blue-600 text-white px-5 py-3 rounded-xl text-[10px] font-black hover:bg-blue-700 transition shadow-md active:scale-95 uppercase tracking-widest">
                   Create List
                 </button>
                 <button type="button" onClick={() => setIsAddingList(false)} className="text-slate-400 hover:text-slate-700 p-2 transition">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
               </div>
             </form>
           ) : (
             <button 
               onClick={() => setIsAddingList(true)}
-              className="w-full bg-slate-200/50 border border-dashed border-slate-300/80 hover:bg-slate-200 hover:border-slate-400 text-slate-600 font-bold p-4 rounded-2xl text-left transition-all flex items-center gap-3 group text-xs tracking-widest uppercase"
+              className="w-full bg-slate-300/40 border-none hover:bg-slate-300 text-slate-600 font-black p-5 rounded-2xl text-left transition-all flex items-center gap-4 group text-[10px] tracking-[0.2em] uppercase shadow-sm"
             >
-              <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-300/50 text-xl leading-none group-hover:bg-blue-500 group-hover:text-white transition-all">+</span> 
-              Add another list
+              <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-400/30 text-2xl leading-none group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">+</span> 
+              New List
             </button>
           )}
         </div>

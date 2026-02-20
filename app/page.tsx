@@ -22,23 +22,22 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50/50 pb-20">
-      {/* Refined Header Proportions */}
-      <div className="bg-white border-b border-slate-200 py-12 mb-12 shadow-sm">
+    <main className="min-h-screen bg-slate-100 pb-24">
+      <div className="bg-white py-16 mb-16 shadow-sm shadow-slate-200">
         <Container>
-          <div className="space-y-3">
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+          <div className="space-y-4">
+            <h1 className="text-5xl font-black tracking-tighter text-slate-900 sm:text-7xl">
               Workspaces
             </h1>
-            <p className="text-lg text-slate-500 max-w-2xl font-medium">
-              Manage your teams, boards, and projects in one place.
+            <p className="text-2xl text-slate-500 max-w-2xl font-bold tracking-tight">
+              The high-level container for your boards and projects.
             </p>
           </div>
         </Container>
       </div>
 
       <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-stretch">
           {allWorkspaces.map((ws) => (
             <BoardCard
               key={ws.id}
@@ -56,21 +55,20 @@ export default async function Home() {
             />
           ))}
 
-          {/* Consistent Standard Card Styling */}
-          <div className="p-6 bg-white rounded-xl border-2 border-dashed border-slate-200 shadow-sm flex flex-col justify-center min-h-[160px]">
-            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 text-lg font-bold">
+          <div className="p-10 bg-white rounded-2xl shadow-md flex flex-col justify-center min-h-[200px] hover:shadow-lg transition-all border-none">
+            <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-4 uppercase tracking-widest">
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 text-xl font-black shadow-sm">
                 +
               </span>
               New Workspace
             </h2>
-            <form action={handleCreateWorkspace} className="flex flex-col gap-4">
+            <form action={handleCreateWorkspace} className="flex flex-col gap-6">
               <Input 
                 name="name" 
                 placeholder="Team name..." 
                 required
               />
-              <Button type="submit" fullWidth>
+              <Button type="submit" fullWidth size="lg">
                 Add Workspace
               </Button>
             </form>

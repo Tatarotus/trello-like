@@ -22,9 +22,9 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
 
   if (!workspace) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <h1 className="text-2xl font-bold text-slate-800">Workspace not found</h1>
-        <Link href="/" className="text-blue-600 hover:underline mt-4">Go back to Workspaces</Link>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-100">
+        <h1 className="text-3xl font-black text-slate-800">Workspace not found</h1>
+        <Link href="/" className="text-blue-600 hover:underline mt-4 font-bold">Go back to Workspaces</Link>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
   }
 
   return (
-    <main className="min-h-screen bg-slate-50/50 pb-20">
+    <main className="min-h-screen bg-slate-100 pb-24">
       <WorkspaceHeader 
         name={workspace.name} 
         description={workspace.description || "Project management and team collaboration."}
@@ -47,7 +47,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
       />
 
       <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-stretch">
           {workspace.boards.map((board) => (
             <BoardCard
               key={board.id}
@@ -63,9 +63,9 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
             />
           ))}
 
-          <div className="p-6 bg-white rounded-xl border-2 border-dashed border-slate-200 shadow-sm flex flex-col justify-center min-h-[160px]">
-            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 text-lg font-bold">
+          <div className="p-8 bg-white rounded-2xl shadow-md flex flex-col justify-center min-h-[180px] hover:shadow-lg transition-all border-none">
+            <h2 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-4 uppercase tracking-widest">
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 text-lg font-black shadow-sm">
                 +
               </span>
               New Board
@@ -73,7 +73,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
             <form action={handleCreateBoard} className="flex flex-col gap-4">
               <Input 
                 name="name" 
-                placeholder="Marketing Roadmap..." 
+                placeholder="Board name..." 
                 required
               />
               <Button type="submit" fullWidth>
