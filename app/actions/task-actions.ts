@@ -46,3 +46,16 @@ export async function createTask(title: string, listId: string, order: number) {
     return { success: false, error: "Database insert failed" };
   }
 }
+
+export async function deleteTask(taskId: string) {
+  try {
+    await db
+      .delete(tasks)
+      .where(eq(tasks.id, taskId));
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete task:", error);
+    return { success: false, error: "Database delete failed" };
+  }
+}

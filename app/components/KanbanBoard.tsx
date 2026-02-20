@@ -11,18 +11,19 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskCard } from './TaskCard';
-import { updateTaskPosition, createTask } from '../actions/task-actions';
-
+import { updateTaskPosition, createTask, deleteTask } from '../actions/task-actions';
 type Task = { id: string; title: string; order: number; listId: string };
 type List = { id: string; title: string; order: number; tasks: Task[] };
 
 // 1. New Component: A dedicated Droppable Column to fix the "Empty List" bug
 function BoardColumn({ 
   list, 
-  onAddTask 
+  onAddTask,
+  onDeleteTask
 }: { 
   list: List; 
   onAddTask: (listId: string, title: string) => void;
+  onDeleteTask: (taskId: string, listId: string) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: list.id });
   const [isAdding, setIsAdding] = useState(false);
@@ -52,7 +53,12 @@ function BoardColumn({
       <div ref={setNodeRef} className="flex-1 flex flex-col gap-2 min-h-[50px]">
         <SortableContext items={list.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {list.tasks.map((task) => (
-            <TaskCard key={task.id} id={task.id} title={task.title} />
+            <TaskCard 
+              key={task.id} 
+              id={task.id} 
+              title={task.title}
+              onDelete={() => onDeleteTask(task.id, list.id)} // <-- Pass it to the card
+      />
           ))}
         </SortableContext>
       </div>
@@ -165,6 +171,30 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
     }
   };
 
+  const handleDeleteTask = async (taskId: string, listId: string) => {
+    // 1. Optimistic Update: Remove it from the UI instantly
+    setLists(prevLists => {
+      return prevLists.map(list => {
+        if (list.id === listId) {
+          return {
+            ...list,
+            tasks: list.tasks.filter(task => task.id !== taskId) // Filter out the deleted task
+          };
+        }
+        return list;
+      });
+    });
+
+    // 2. Background Database Update
+    const result = await deleteTask(taskId);
+
+    // 3. Rollback if it fails
+    if (!result.success) {
+      console.error("Failed to delete task from database");
+      setLists(initialLists); // Resync with the server state if SQLite fails
+    }
+  };
+
   // Triggered when dragging starts: saves the active task for the DragOverlay
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -245,6 +275,7 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
             key={list.id} 
             list={list} 
             onAddTask={handleAddTask} 
+            onDeleteTask={handleDeleteTask}
           />
         ))}
       </div>
