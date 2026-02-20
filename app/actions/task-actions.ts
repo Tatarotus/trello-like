@@ -1,11 +1,7 @@
 "use server"
 
-// import { db } from '../db';
-// import { tasks } from '../db/schema';
 import { db } from '@/db';
 import { tasks } from '@/db/schema';
-// import { db } from '../../db';
-// import { tasks } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function updateTaskPosition(
@@ -29,5 +25,24 @@ export async function updateTaskPosition(
   } catch (error) {
     console.error("Failed to update task position:", error);
     return { success: false, error: "Database update failed" };
+  }
+}
+
+export async function createTask(title: string, listId: string, order: number) {
+  try {
+    const newTask = await db
+      .insert(tasks)
+      .values({
+        id: crypto.randomUUID(), // Native Node.js unique ID generator
+        title,
+        listId,
+        order,
+      })
+      .returning();
+    
+    return { success: true, task: newTask[0] };
+  } catch (error) {
+    console.error("Failed to create task:", error);
+    return { success: false, error: "Database insert failed" };
   }
 }

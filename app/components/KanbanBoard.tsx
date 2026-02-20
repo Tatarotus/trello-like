@@ -1,6 +1,5 @@
 "use client"
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   DndContext, 
   closestCorners, 
@@ -12,14 +11,36 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskCard } from './TaskCard';
-import { updateTaskPosition } from '../actions/task-actions'; // Ensure path is correct
+import { updateTaskPosition, createTask } from '../actions/task-actions';
 
 type Task = { id: string; title: string; order: number; listId: string };
 type List = { id: string; title: string; order: number; tasks: Task[] };
 
 // 1. New Component: A dedicated Droppable Column to fix the "Empty List" bug
-function BoardColumn({ list }: { list: List }) {
+function BoardColumn({ 
+  list, 
+  onAddTask 
+}: { 
+  list: List; 
+  onAddTask: (listId: string, title: string) => void;
+}) {
   const { setNodeRef } = useDroppable({ id: list.id });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) {
+      setIsAdding(false);
+      return;
+    }
+    
+    // Send it to the parent board to handle the state/database
+    onAddTask(list.id, newTaskTitle);
+    
+    // Clear the input but keep the form open for rapid data entry
+    setNewTaskTitle(""); 
+  };
 
   return (
     <div className="bg-slate-200/50 w-80 p-3 rounded-xl flex-shrink-0 flex flex-col">
@@ -28,8 +49,7 @@ function BoardColumn({ list }: { list: List }) {
         <span className="text-slate-400 font-normal text-sm">{list.tasks.length}</span>
       </h3>
       
-      {/* setNodeRef makes the entire background a valid drop target, even if empty */}
-      <div ref={setNodeRef} className="flex-1 flex flex-col gap-2 min-h-[150px]">
+      <div ref={setNodeRef} className="flex-1 flex flex-col gap-2 min-h-[50px]">
         <SortableContext items={list.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {list.tasks.map((task) => (
             <TaskCard key={task.id} id={task.id} title={task.title} />
@@ -37,9 +57,47 @@ function BoardColumn({ list }: { list: List }) {
         </SortableContext>
       </div>
       
-      <button className="w-full mt-3 text-left px-2 py-2 text-slate-500 hover:bg-slate-300/50 hover:text-slate-700 rounded text-sm transition font-medium">
-        + Add a card
-      </button>
+      {/* The Add Card Inline Form */}
+      {isAdding ? (
+        <form onSubmit={handleSubmit} className="mt-2">
+          <textarea
+            autoFocus
+            className="w-full p-2 rounded-lg border-none shadow-sm resize-none focus:ring-2 focus:ring-blue-500 text-sm mb-2 text-slate-700"
+            rows={2}
+            placeholder="Enter a title for this card..."
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <div className="flex gap-2 items-center">
+            <button 
+              type="submit" 
+              className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-700 transition"
+            >
+              Add card
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setIsAdding(false)}
+              className="text-slate-500 hover:text-slate-800 p-1 text-lg"
+            >
+              ×
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button 
+          onClick={() => setIsAdding(true)}
+          className="w-full mt-2 text-left px-2 py-2 text-slate-500 hover:bg-slate-300/50 hover:text-slate-700 rounded text-sm transition font-medium flex items-center gap-1"
+        >
+          <span>+</span> Add a card
+        </button>
+      )}
     </div>
   );
 }
@@ -47,6 +105,65 @@ function BoardColumn({ list }: { list: List }) {
 export default function KanbanBoard({ initialLists }: { initialLists: List[] }) {
   const [lists, setLists] = useState<List[]>(initialLists);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  //add task to list
+  const handleAddTask = async (listId: string, title: string) => {
+    // 1. Create a temporary ID for instant UI updates
+    const tempId = `temp-${Date.now()}`;
+    const targetListIndex = lists.findIndex(l => l.id === listId);
+    if (targetListIndex === -1) return;
+
+    const newOrder = lists[targetListIndex].tasks.length;
+    
+    const optimisticTask: Task = {
+      id: tempId,
+      title: title,
+      listId: listId,
+      order: newOrder
+    };
+
+    // 2. Optimistic Update: instantly add to the screen (DEEP COPY FIX)
+    setLists(prevLists => {
+      return prevLists.map(list => {
+        if (list.id === listId) {
+          // Create a brand new array for the tasks instead of mutating with .push()
+          return { ...list, tasks: [...list.tasks, optimisticTask] };
+        }
+        return list;
+      });
+    });
+
+    // 3. Background Database Save
+    const result = await createTask(title, listId, newOrder);
+
+    if (result.success && result.task) {
+      // 4. Swap the temporary ID for the real database ID
+      setLists(prevLists => {
+        return prevLists.map(list => {
+          if (list.id === listId) {
+            return {
+              ...list,
+              tasks: list.tasks.map(task => 
+                task.id === tempId ? result.task : task
+              )
+            };
+          }
+          return list;
+        });
+      });
+
+    } else {
+      // 5. Rollback if SQLite fails
+      console.error("Failed to save task");
+      setLists(initialLists);
+    }
+  };
 
   // Triggered when dragging starts: saves the active task for the DragOverlay
   const handleDragStart = (event: DragStartEvent) => {
@@ -111,6 +228,10 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
     }
   };
 
+  if (!isMounted) {
+    return null; // Or you could return a loading spinner / skeleton board here
+  }
+
   return (
     <DndContext 
       collisionDetection={closestCorners} 
@@ -120,7 +241,11 @@ export default function KanbanBoard({ initialLists }: { initialLists: List[] }) 
     >
       <div className="flex gap-4 items-start overflow-x-auto pb-4">
         {lists.map((list) => (
-          <BoardColumn key={list.id} list={list} />
+          <BoardColumn 
+            key={list.id} 
+            list={list} 
+            onAddTask={handleAddTask} 
+          />
         ))}
       </div>
 
