@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: projects-kanban
+    restart: always
+    ports:
+      - "8090:8090"
+    environment:
+      - NODE_ENV=production
+      # Add your database URL here. If using SQLite, map it to the volume below.
+      - DATABASE_URL=sqlite:///app/data/sqlite.db 
+    volumes:
+      # Mount a volume so your SQLite database persists across container restarts
+      - app-data:/app/data
+
+volumes:
+  app-data:
