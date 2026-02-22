@@ -1,5 +1,4 @@
 "use client"
-// app/components/ui/Input.tsx
 import { InputHTMLAttributes } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -9,18 +8,18 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export function Input({ label, error, className = "", ...props }: InputProps) {
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-1.5 w-full">
       {label && (
-        <label className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
+        <label className="text-sm font-medium text-gray-700">
           {label}
         </label>
       )}
       <input
-        className={`flex h-12 w-full rounded-xl border-none bg-slate-100 px-4 py-2 text-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 shadow-inner transition-all ${className}`}
+        className={`flex h-9 w-full rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-colors ${className}`}
         {...props}
       />
       {error && (
-        <p className="text-xs font-semibold text-red-500">
+        <p className="text-xs text-red-500">
           {error}
         </p>
       )}

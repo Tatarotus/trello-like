@@ -9,14 +9,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ id, title, onDelete }: TaskCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -28,7 +21,7 @@ export function TaskCard({ id, title, onDelete }: TaskCardProps) {
       <div 
         ref={setNodeRef}
         style={style}
-        className="bg-slate-300 h-24 rounded-xl opacity-40 shadow-inner"
+        className="bg-gray-50 border border-gray-200 border-dashed rounded-md h-[42px] opacity-50"
       />
     );
   }
@@ -39,9 +32,9 @@ export function TaskCard({ id, title, onDelete }: TaskCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="group bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative animate-in fade-in slide-in-from-bottom-2 duration-300 border-none"
+      className="group bg-white border border-gray-200 rounded-md p-3 hover:border-gray-300 hover:bg-gray-50 transition-colors cursor-grab active:cursor-grabbing relative"
     >
-      <p className="text-sm font-bold text-slate-700 leading-relaxed pr-6">
+      <p className="text-sm text-gray-900 pr-6 break-words">
         {title}
       </p>
       
@@ -52,19 +45,11 @@ export function TaskCard({ id, title, onDelete }: TaskCardProps) {
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all shadow-sm hover:shadow-md"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
       )}
-
-      <div className="mt-4 flex items-center justify-between">
-         <div className="flex gap-2">
-            <div className="w-6 h-1.5 rounded-full bg-blue-100 shadow-inner"></div>
-            <div className="w-6 h-1.5 rounded-full bg-slate-100 shadow-inner"></div>
-         </div>
-         <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em]">Task</div>
-      </div>
     </div>
   );
 }

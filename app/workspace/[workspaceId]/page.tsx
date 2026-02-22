@@ -22,9 +22,9 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
 
   if (!workspace) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-100">
-        <h1 className="text-3xl font-black text-slate-800">Workspace not found</h1>
-        <Link href="/" className="text-blue-600 hover:underline mt-4 font-bold">Go back to Workspaces</Link>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <h1 className="text-xl font-medium text-gray-900">Workspace not found</h1>
+        <Link href="/" className="text-gray-500 hover:text-gray-900 mt-2 text-sm">Go back to Workspaces</Link>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 pb-24">
+    <main className="min-h-screen bg-gray-50 pb-24 font-sans">
       <WorkspaceHeader 
         name={workspace.name} 
         description={workspace.description || "Project management and team collaboration."}
@@ -47,7 +47,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
       />
 
       <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
           {workspace.boards.map((board) => (
             <BoardCard
               key={board.id}
@@ -63,21 +63,19 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
             />
           ))}
 
-          <div className="p-8 bg-white rounded-2xl shadow-md flex flex-col justify-center min-h-[180px] hover:shadow-lg transition-all border-none">
-            <h2 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-4 uppercase tracking-widest">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 text-lg font-black shadow-sm">
-                +
-              </span>
+          <div className="p-5 bg-white border border-gray-200 rounded-md flex flex-col justify-center min-h-[140px]">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14m-7-7h14"/></svg>
               New Board
             </h2>
-            <form action={handleCreateBoard} className="flex flex-col gap-4">
+            <form action={handleCreateBoard} className="flex flex-col gap-3">
               <Input 
                 name="name" 
                 placeholder="Board name..." 
                 required
               />
               <Button type="submit" fullWidth>
-                Add Board
+                Create
               </Button>
             </form>
           </div>

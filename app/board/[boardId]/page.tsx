@@ -3,12 +3,10 @@ import { db } from "@/db";
 import { boards } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
-import { Container } from "../../components/ui/Container";
 
 export default async function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = await params;
 
-  // Drizzle's relational query fetches the lists and their nested tasks instantly
   const board = await db.query.boards.findFirst({
     where: eq(boards.id, boardId),
     with: {
@@ -26,32 +24,32 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
 
   if (!board) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <h1 className="text-2xl font-bold text-slate-800">Board not found</h1>
-        <Link href="/" className="text-blue-600 hover:underline mt-4">Go back to Workspaces</Link>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <h1 className="text-xl font-medium text-gray-900">Board not found</h1>
+        <Link href="/" className="text-gray-500 hover:text-gray-900 mt-2 text-sm">Go back to Workspaces</Link>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-100/50 flex flex-col h-screen overflow-hidden">
-      <header className="bg-white border-b border-slate-200 px-6 py-5 flex items-center justify-between shadow-sm z-10 shrink-0">
-        <div className="flex flex-col gap-1">
+    <main className="min-h-screen bg-gray-50 flex flex-col h-screen overflow-hidden font-sans">
+      <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between z-10 shrink-0">
+        <div className="flex items-center gap-2.5">
           <Link 
             href={`/workspace/${board.workspaceId}`} 
-            className="group flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-wider"
+            className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
             {board.workspace?.name}
           </Link>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">{board.name}</h1>
+          <span className="text-gray-300">/</span>
+          <h1 className="text-sm font-semibold text-gray-900">{board.name}</h1>
         </div>
         
         <div className="flex items-center gap-3">
-           <div className="h-8 w-[1px] bg-slate-200 mx-2 hidden sm:block"></div>
-           <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-xs font-bold text-blue-600 uppercase">S</div>
-              <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-xs font-bold text-slate-600 uppercase">G</div>
+           <div className="h-4 w-[1px] bg-gray-200 mx-2 hidden sm:block"></div>
+           <div className="flex -space-x-1.5">
+              <div className="w-6 h-6 rounded-full bg-gray-200 border border-white flex items-center justify-center text-[10px] font-medium text-gray-700">S</div>
+              <div className="w-6 h-6 rounded-full bg-gray-100 border border-white flex items-center justify-center text-[10px] font-medium text-gray-600">G</div>
            </div>
         </div>
       </header>

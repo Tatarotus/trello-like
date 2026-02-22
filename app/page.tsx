@@ -22,14 +22,14 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 pb-24">
-      <div className="bg-white py-16 mb-16 shadow-sm shadow-slate-200">
+    <main className="min-h-screen bg-gray-50 pb-24 font-sans">
+      <div className="bg-white border-b border-gray-200 py-12 mb-8">
         <Container>
-          <div className="space-y-4">
-            <h1 className="text-5xl font-black tracking-tighter text-slate-900 sm:text-7xl">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold text-gray-900">
               Workspaces
             </h1>
-            <p className="text-2xl text-slate-500 max-w-2xl font-bold tracking-tight">
+            <p className="text-base text-gray-500 max-w-2xl">
               The high-level container for your boards and projects.
             </p>
           </div>
@@ -37,7 +37,7 @@ export default async function Home() {
       </div>
 
       <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
           {allWorkspaces.map((ws) => (
             <BoardCard
               key={ws.id}
@@ -55,21 +55,19 @@ export default async function Home() {
             />
           ))}
 
-          <div className="p-10 bg-white rounded-2xl shadow-md flex flex-col justify-center min-h-[200px] hover:shadow-lg transition-all border-none">
-            <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-4 uppercase tracking-widest">
-              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 text-xl font-black shadow-sm">
-                +
-              </span>
+          <div className="p-5 bg-white border border-gray-200 rounded-md flex flex-col justify-center min-h-[160px]">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14m-7-7h14"/></svg>
               New Workspace
             </h2>
-            <form action={handleCreateWorkspace} className="flex flex-col gap-6">
+            <form action={handleCreateWorkspace} className="flex flex-col gap-3">
               <Input 
                 name="name" 
                 placeholder="Team name..." 
                 required
               />
-              <Button type="submit" fullWidth size="lg">
-                Add Workspace
+              <Button type="submit" fullWidth>
+                Create
               </Button>
             </form>
           </div>
