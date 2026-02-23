@@ -2,7 +2,8 @@ import Link from "next/link";
 import { db } from "@/db";
 import { createBoard, deleteBoard } from "../../actions/board-actions";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { getSession } from "@/lib/session";
 import { workspaces } from "@/db/schema";
 import { Container } from "../../components/ui/Container";
 import { BoardCard } from "../../components/ui/BoardCard";
@@ -11,13 +12,12 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 
 export default async function WorkspacePage({ params }: { params: Promise<{ workspaceId: string }> }) {
+  const session = await getSession();
   const { workspaceId } = await params;
 
   const workspace = await db.query.workspaces.findFirst({
-    where: eq(workspaces.id, workspaceId),
-    with: {
-      boards: true
-    }
+    where: and(eq(workspaces.id, workspaceId), eq(workspaces.userId, session!.userId)),
+    with: { boards: true }
   });
 
   if (!workspace) {

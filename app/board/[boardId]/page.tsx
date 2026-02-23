@@ -1,11 +1,13 @@
 import KanbanBoard from "../../components/KanbanBoard";
 import { db } from "@/db";
+import { getSession } from "@/lib/session";
 import { boards } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 
 export default async function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
   const { boardId } = await params;
+  const session = await getSession();
 
   const board = await db.query.boards.findFirst({
     where: eq(boards.id, boardId),
@@ -21,6 +23,11 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
       }
     }
   });
+
+  // Verify the user owns the parent workspace
+  if (!board || board.workspace?.userId !== session?.userId) {
+    return <div>Board not found or unauthorized</div>;
+  }
 
   if (!board) {
     return (

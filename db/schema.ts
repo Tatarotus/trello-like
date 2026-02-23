@@ -1,9 +1,17 @@
-// db/schema.ts
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  password: text('password').notNull(),
+  name: text('name').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 export const workspaces = sqliteTable('workspaces', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id), // Link to user
   name: text('name').notNull(),
   description: text('description'),
 });
@@ -29,7 +37,15 @@ export const tasks = sqliteTable('tasks', {
 });
 
 // Relations
-export const workspacesRelations = relations(workspaces, ({ many }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
+  workspaces: many(workspaces),
+}));
+
+export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
+  user: one(users, {
+    fields: [workspaces.userId],
+    references: [users.id],
+  }),
   boards: many(boards),
 }));
 
