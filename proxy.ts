@@ -8,7 +8,8 @@ const encodedKey = new TextEncoder().encode(secretKey);
 const protectedRoutes = ['/', '/workspace', '/board'];
 const publicRoutes = ['/login', '/register'];
 
-export async function middleware(req: NextRequest) {
+// Changed function name from 'middleware' to 'proxy'
+export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const isProtectedRoute = protectedRoutes.some(r => path === r || path.startsWith(`${r}/`));
   const isPublicRoute = publicRoutes.includes(path);

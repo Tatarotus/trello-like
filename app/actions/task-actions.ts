@@ -94,3 +94,23 @@ export async function deleteList(listId: string) {
     return { success: false, error: "Database delete failed" };
   }
 }
+
+export async function reorderTasks(items: { id: string; order: number; listId: string }[]) {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Unauthorized" };
+
+  try {
+    db.transaction((tx) => {
+      for (const item of items) {
+        tx.update(tasks)
+          .set({ order: item.order, listId: item.listId })
+          .where(eq(tasks.id, item.id))
+          .run();
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reorder tasks:", error);
+    return { success: false, error: "Database update failed" };
+  }
+}

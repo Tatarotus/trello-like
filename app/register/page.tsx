@@ -13,7 +13,10 @@ export default function RegisterPage() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 border border-gray-200 shadow-sm sm:rounded-lg sm:px-10">
-          <form action={register} className="space-y-4">
+          <form action={async (formData) => {
+            'use server'
+            await register(formData)
+          }} className="space-y-4">
             <Input label="Email address" name="email" type="email" required />
             <Input label="Name" name="name" type="text" required />
             <Input label="Password" name="password" type="password" required />

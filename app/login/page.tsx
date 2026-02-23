@@ -13,7 +13,10 @@ export default function LoginPage() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 border border-gray-200 shadow-sm sm:rounded-lg sm:px-10">
-          <form action={login} className="space-y-4">
+          <form action={async (formData) => {
+            'use server'
+            await login(formData)
+          }} className="space-y-4">
             <Input label="Email address" name="email" type="email" required />
             <Input label="Password" name="password" type="password" required />
             <div className="pt-2">

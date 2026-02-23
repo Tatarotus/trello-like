@@ -21,8 +21,12 @@ export function TaskCard({ id, title, onDelete }: TaskCardProps) {
       <div 
         ref={setNodeRef}
         style={style}
-        className="bg-gray-50 border border-gray-200 border-dashed rounded-md h-[42px] opacity-50"
-      />
+        className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-md p-3 opacity-50"
+      >
+        <p className="text-sm text-gray-900 pr-6 break-words opacity-0">
+          {title}
+        </p>
+      </div>
     );
   }
 
