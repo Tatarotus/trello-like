@@ -40,12 +40,16 @@ export function TaskCard({ id, title, onDelete }: TaskCardProps) {
       
       {onDelete && (
         <button 
+          // THIS IS THE CRITICAL FIX: Stop the drag system from intercepting the click
+          onPointerDown={(e) => e.stopPropagation()} 
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 rounded transition-colors cursor-pointer"
+          aria-label="Delete task"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
