@@ -16,9 +16,18 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { TaskCard } from './TaskCard';
-import { createTask, deleteTask, updateListTitle, createList, deleteList, reorderTasks } from '../actions/task-actions';
+import { TaskDetailModal } from './TaskDetailModal';
+import { createTask, deleteTask, updateListTitle, createList, deleteList, reorderTasks, updateTask } from '../actions/task-actions';
 
-type Task = { id: string; title: string; order: number; listId: string };
+type Task = { 
+  id: string; 
+  title: string; 
+  description: string | null;
+  dueDate: string | null;
+  labels: string[] | null;
+  order: number; 
+  listId: string 
+};
 type List = { id: string; title: string; order: number; tasks: Task[] };
 
 const dropAnimation: DropAnimation = {
@@ -32,14 +41,14 @@ const dropAnimation: DropAnimation = {
 };
 
 function BoardColumn({ 
-  list, tasks, onAddTask, onDeleteTask, onRenameList, onDeleteList
+  list, tasks, onAddTask, onRenameList, onDeleteList, onTaskClick
 }: { 
   list: List; 
   tasks: Task[];
   onAddTask: (listId: string, title: string) => void;
-  onDeleteTask: (taskId: string, listId: string) => void;
   onRenameList: (listId: string, newTitle: string) => void;
   onDeleteList: (listId: string) => void;
+  onTaskClick: (task: Task) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: list.id });
   const [isAdding, setIsAdding] = useState(false);
@@ -104,8 +113,9 @@ function BoardColumn({
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard 
-              key={task.id} id={task.id} title={task.title}
-              onDelete={() => onDeleteTask(task.id, list.id)} 
+              key={task.id} 
+              task={task}
+              onClick={() => onTaskClick(task)}
             />
           ))}
         </SortableContext>
@@ -153,6 +163,7 @@ function BoardColumn({
 export default function KanbanBoard({ initialLists, boardId }: { initialLists: List[], boardId: string }) {
   const [lists, setLists] = useState<List[]>(initialLists);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
@@ -177,7 +188,15 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
     if (targetListIndex === -1) return;
     
     const newOrder = lists[targetListIndex].tasks.length;
-    const optimisticTask: Task = { id: tempId, title, listId, order: newOrder };
+    const optimisticTask: Task = { 
+        id: tempId, 
+        title, 
+        listId, 
+        order: newOrder,
+        description: '',
+        dueDate: null,
+        labels: []
+    };
 
     setLists(prev => prev.map(list => list.id === listId ? { ...list, tasks: [...list.tasks, optimisticTask] } : list));
     
@@ -190,11 +209,35 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
     }
   };
 
-  const handleDeleteTask = async (taskId: string, listId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
     const oldLists = [...lists];
+    // Find listId for this task
+    let listId = "";
+    for (const list of lists) {
+        if (list.tasks.some(t => t.id === taskId)) {
+            listId = list.id;
+            break;
+        }
+    }
+    if (!listId) return;
+
     setLists(prev => prev.map(list => list.id === listId ? { ...list, tasks: list.tasks.filter(t => t.id !== taskId) } : list));
     const result = await deleteTask(taskId);
     if (!result.success) setLists(oldLists); 
+  };
+
+  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
+    const oldLists = [...lists];
+    
+    setLists(prev => prev.map(list => ({
+        ...list,
+        tasks: list.tasks.map(task => task.id === taskId ? { ...task, ...updates } : task)
+    })));
+
+    const result = await updateTask(taskId, updates);
+    if (!result.success) {
+        setLists(oldLists);
+    }
   };
 
   const handleRenameList = async (listId: string, newTitle: string) => {
@@ -381,9 +424,9 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
             list={list} 
             tasks={list.tasks}
             onAddTask={handleAddTask} 
-            onDeleteTask={handleDeleteTask}
             onRenameList={handleRenameList} 
             onDeleteList={handleDeleteList}
+            onTaskClick={setSelectedTask}
           />
         ))}
 
@@ -424,10 +467,20 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
       <DragOverlay dropAnimation={dropAnimation}>
         {activeTask ? (
           <div className="rotate-2 cursor-grabbing">
-             <TaskCard id={activeTask.id} title={activeTask.title} />
+             <TaskCard task={activeTask} onClick={() => {}} />
           </div>
         ) : null}
       </DragOverlay>
+
+      {selectedTask && (
+          <TaskDetailModal 
+            task={selectedTask}
+            isOpen={!!selectedTask}
+            onClose={() => setSelectedTask(null)}
+            onSave={handleUpdateTask}
+            onDelete={handleDeleteTask}
+          />
+      )}
     </DndContext>
   );
 }

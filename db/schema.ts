@@ -32,6 +32,9 @@ export const lists = sqliteTable('lists', {
 export const tasks = sqliteTable('tasks', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
+  description: text('description').default(''),
+  dueDate: text('due_date'),
+  labels: text('labels', { mode: 'json' }).$type<string[]>().default([]),
   order: integer('order').notNull(),
   listId: text('list_id').notNull().references(() => lists.id),
 });

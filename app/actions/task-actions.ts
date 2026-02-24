@@ -51,6 +51,28 @@ export async function deleteTask(taskId: string) {
   }
 }
 
+export async function updateTask(taskId: string, updates: { 
+  title?: string, 
+  description?: string, 
+  dueDate?: string | null, 
+  labels?: string[] 
+}) {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Unauthorized" };
+
+  try {
+    const updatedTask = await db.update(tasks)
+      .set(updates)
+      .where(eq(tasks.id, taskId))
+      .returning();
+    
+    return { success: true, task: updatedTask[0] };
+  } catch (error) {
+    console.error("Failed to update task:", error);
+    return { success: false, error: "Database update failed" };
+  }
+}
+
 export async function updateListTitle(listId: string, newTitle: string) {
   const session = await getSession();
   if (!session) return { success: false, error: "Unauthorized" };
