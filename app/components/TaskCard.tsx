@@ -8,8 +8,11 @@ interface Task {
   description: string | null;
   dueDate: string | null;
   labels: string[] | null;
+  completed?: boolean;
   order: number;
   listId: string;
+  parentId?: string | null;
+  children?: Task[];
 }
 
 interface TaskCardProps {
@@ -58,10 +61,16 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     <div 
       ref={setNodeRef}
       style={style}
-      className="group bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 hover:shadow-md transition-all cursor-pointer relative"
-      onClick={onClick}
+      {...attributes}
+      {...listeners}
+      className={`group bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-grab active:cursor-grabbing relative ${task.completed ? 'opacity-75' : ''}`}
+      onClick={(e) => {
+        // Prevent click if it was actually a drag
+        if (e.defaultPrevented) return;
+        onClick();
+      }}
     >
-      <div className="p-3 pr-8">
+      <div className="p-3">
         {/* Labels */}
         {task.labels && task.labels.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
@@ -74,12 +83,17 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           </div>
         )}
         
-        <p className="text-sm font-medium text-gray-800 break-words line-clamp-3">
+        <p className={`text-sm font-medium text-gray-800 break-words line-clamp-3 ${task.completed ? 'line-through text-gray-500' : ''}`}>
           {task.title}
         </p>
 
         {/* Info Icons */}
         <div className="flex items-center gap-3 mt-2 text-gray-400">
+          {task.completed && (
+             <div className="flex items-center gap-1 text-green-600 bg-green-50 px-1 py-0.5 rounded">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+             </div>
+          )}
           {task.description && (
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           )}
@@ -89,18 +103,13 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
                 {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
              </div>
           )}
+          {task.children && task.children.length > 0 && (
+             <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500" title={`${task.children.length} sub-tasks`}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12h18M3 6h18M3 18h12"/></svg>
+                {task.children.length}
+             </div>
+          )}
         </div>
-      </div>
-      
-      {/* Drag Handle */}
-      <div 
-        {...attributes}
-        {...listeners}
-        className="absolute top-2 right-2 p-1 text-gray-300 hover:text-gray-500 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
-        onClick={(e) => e.stopPropagation()}
-        title="Drag to reorder"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="15" x2="16" y2="15"/></svg>
       </div>
     </div>
   );

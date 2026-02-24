@@ -1,7 +1,8 @@
 "use client"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { createTask, getSubTasks, updateTask, deleteTask } from '../actions/task-actions';
 
 interface Task {
   id: string;
@@ -9,8 +10,10 @@ interface Task {
   description: string | null;
   dueDate: string | null;
   labels: string[] | null;
+  completed?: boolean;
   order: number;
   listId: string;
+  parentId?: string | null;
 }
 
 interface TaskDetailModalProps {
@@ -19,6 +22,7 @@ interface TaskDetailModalProps {
   onClose: () => void;
   onSave: (taskId: string, updates: Partial<Task>) => Promise<void>;
   onDelete: (taskId: string) => Promise<void>;
+  onSubtasksChange?: (parentId: string, subtasks: Task[]) => void;
 }
 
 const AVAILABLE_LABELS = [
@@ -29,32 +33,116 @@ const AVAILABLE_LABELS = [
   { name: 'Purple', color: 'bg-purple-500' },
 ];
 
-export function TaskDetailModal({ task, isOpen, onClose, onSave, onDelete }: TaskDetailModalProps) {
-  const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description || '');
-  const [dueDate, setDueDate] = useState(task.dueDate || '');
-  const [selectedLabels, setSelectedLabels] = useState<string[]>(task.labels || []);
+export function TaskDetailModal({ task: initialTask, isOpen, onClose, onSave, onDelete, onSubtasksChange }: TaskDetailModalProps) {
+  // Navigation stack for infinite nesting
+  const [taskStack, setTaskStack] = useState<Task[]>([initialTask]);
+  const currentTask = taskStack[taskStack.length - 1];
+
+  const [title, setTitle] = useState(currentTask.title);
+  const [description, setDescription] = useState(currentTask.description || '');
+  const [dueDate, setDueDate] = useState(currentTask.dueDate || '');
+  const [selectedLabels, setSelectedLabels] = useState<string[]>(currentTask.labels || []);
+  const [completed, setCompleted] = useState(currentTask.completed || false);
   const [isSaving, setIsSaving] = useState(false);
+  const [subtasks, setSubtasks] = useState<Task[]>([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
+
+  // ESC key support
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  const fetchSubtasks = useCallback(async (taskId: string) => {
+    const result = await getSubTasks(taskId);
+    if (result.success && result.tasks) {
+      setSubtasks(result.tasks as Task[]);
+    }
+  }, []);
 
   useEffect(() => {
-    setTitle(task.title);
-    setDescription(task.description || '');
-    setDueDate(task.dueDate || '');
-    setSelectedLabels(task.labels || []);
-  }, [task]);
+    setTitle(currentTask.title);
+    setDescription(currentTask.description || '');
+    setDueDate(currentTask.dueDate || '');
+    setSelectedLabels(currentTask.labels || []);
+    setCompleted(currentTask.completed || false);
+    fetchSubtasks(currentTask.id);
+  }, [currentTask, fetchSubtasks]);
 
   if (!isOpen) return null;
 
   const handleSave = async () => {
     setIsSaving(true);
-    await onSave(task.id, {
-      title,
-      description,
-      dueDate: dueDate || null,
-      labels: selectedLabels,
-    });
+    const updates = {
+        title,
+        description,
+        dueDate: dueDate || null,
+        labels: selectedLabels,
+        completed,
+      };
+    await onSave(currentTask.id, updates);
+    
+    // Update local stack state
+    setTaskStack(prev => prev.map(t => t.id === currentTask.id ? { ...t, ...updates } : t));
+    
     setIsSaving(false);
-    onClose();
+  };
+
+  const handleToggleCompleted = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const newCompletedState = !completed;
+      setCompleted(newCompletedState);
+      await onSave(currentTask.id, { completed: newCompletedState });
+  };
+
+  const handleToggleSubtaskCompleted = async (stId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const st = subtasks.find(s => s.id === stId);
+      if (!st) return;
+
+      const newCompleted = !st.completed;
+      const newSubtasks = subtasks.map(s => s.id === stId ? { ...s, completed: newCompleted } : s);
+      setSubtasks(newSubtasks);
+      onSubtasksChange?.(currentTask.id, newSubtasks);
+      await updateTask(stId, { completed: newCompleted });
+  };
+
+  const handleDeleteSubtask = async (stId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!confirm('Delete this sub-task?')) return;
+      
+      const newSubtasks = subtasks.filter(s => s.id !== stId);
+      setSubtasks(newSubtasks);
+      onSubtasksChange?.(currentTask.id, newSubtasks);
+      await deleteTask(stId);
+  };
+
+  const handleAddSubtask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubtaskTitle.trim()) return;
+
+    const result = await createTask(newSubtaskTitle, currentTask.listId, subtasks.length, currentTask.id);
+    if (result.success && result.task) {
+      const newSubtasks = [...subtasks, result.task as Task];
+      setSubtasks(newSubtasks);
+      onSubtasksChange?.(currentTask.id, newSubtasks);
+      setNewSubtaskTitle('');
+      setIsAddingSubtask(false);
+    }
+  };
+
+  const drillDown = (task: Task) => {
+    setTaskStack(prev => [...prev, task]);
+  };
+
+  const goBack = () => {
+    if (taskStack.length > 1) {
+      setTaskStack(prev => prev.slice(0, -1));
+    }
   };
 
   const toggleLabel = (labelName: string) => {
@@ -68,17 +156,48 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave, onDelete }: Tas
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div 
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Navigation Breadcrumbs */}
+        <div className="bg-gray-50 border-b border-gray-100 px-6 py-2 flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none">
+           {taskStack.length > 1 && (
+              <button 
+                onClick={goBack}
+                className="p-1 hover:bg-gray-200 rounded transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+           )}
+           {taskStack.map((t, i) => (
+             <div key={t.id} className="flex items-center gap-2">
+                {i > 0 && <span className="text-gray-300">/</span>}
+                <button 
+                    onClick={() => setTaskStack(prev => prev.slice(0, i + 1))}
+                    className={`text-xs font-medium px-2 py-1 rounded transition-colors ${i === taskStack.length - 1 ? 'bg-white shadow-sm text-gray-900 border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200'}`}
+                >
+                    {t.title}
+                </button>
+             </div>
+           ))}
+        </div>
+
         <div className="p-6 border-b border-gray-100 flex justify-between items-start">
-          <div className="flex-1 mr-4">
-             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Title</label>
-             <Input 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-xl font-bold text-gray-900 border-none px-0 focus:ring-0 h-auto py-0 mb-1"
-             />
+          <div className="flex-1 mr-4 flex items-start gap-4">
+             <button 
+                onClick={handleToggleCompleted}
+                className={`mt-6 w-6 h-6 rounded border flex items-center justify-center transition-all ${completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-gray-400 bg-white'}`}
+             >
+                {completed && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
+             </button>
+             <div className="flex-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Title</label>
+                <Input 
+                    value={title} 
+                    onChange={(e) => setTitle(e.target.value)}
+                    className={`text-xl font-bold text-gray-900 border-none px-0 focus:ring-0 h-auto py-0 mb-1 ${completed ? 'line-through text-gray-400' : ''}`}
+                />
+             </div>
           </div>
           <button 
             onClick={onClose}
@@ -88,7 +207,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave, onDelete }: Tas
           </button>
         </div>
 
-        <div className="p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {/* Labels Section */}
           <section>
             <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -113,7 +232,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave, onDelete }: Tas
           </section>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-6">
+            <div className="md:col-span-2 space-y-8">
               {/* Description Section */}
               <section>
                 <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -121,11 +240,83 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave, onDelete }: Tas
                   Description
                 </h4>
                 <textarea
-                  className="w-full min-h-[150px] p-3 rounded-lg border border-gray-200 focus:border-gray-500 focus:ring-1 focus:ring-gray-500 outline-none text-sm text-gray-900 resize-none bg-gray-50/50"
+                  className="w-full min-h-[120px] p-3 rounded-lg border border-gray-200 focus:border-gray-500 focus:ring-1 focus:ring-gray-500 outline-none text-sm text-gray-900 resize-none bg-gray-50/50"
                   placeholder="Add a more detailed description..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
+              </section>
+
+              {/* Subtasks Section */}
+              <section>
+                 <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h12"/></svg>
+                      Sub-tasks
+                    </h4>
+                    <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{subtasks.length}</span>
+                 </div>
+                 
+                 <div className="space-y-1">
+                    {subtasks.map((st) => (
+                        <div 
+                            key={st.id} 
+                            onClick={() => drillDown(st)}
+                            className="group flex items-center gap-3 p-2 rounded-lg border border-transparent hover:border-gray-200 hover:bg-gray-50 cursor-pointer transition-all"
+                        >
+                            <button 
+                                onClick={(e) => handleToggleSubtaskCompleted(st.id, e)}
+                                className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${st.completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-gray-400 bg-white'}`}
+                            >
+                                {st.completed && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
+                            </button>
+                            
+                            <span className={`text-sm flex-1 truncate ${st.completed ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}`}>
+                                {st.title}
+                            </span>
+
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {st.dueDate && (
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase bg-gray-100 px-1.5 py-0.5 rounded">
+                                        {new Date(st.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    </span>
+                                )}
+                                <button 
+                                    onClick={(e) => handleDeleteSubtask(st.id, e)}
+                                    className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                </button>
+                                <svg className="text-gray-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                        </div>
+                    ))}
+
+                    {isAddingSubtask ? (
+                        <form onSubmit={handleAddSubtask} className="mt-2 flex flex-col gap-2 p-2 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                             <input
+                                autoFocus
+                                className="w-full p-2 rounded border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-gray-900/5"
+                                placeholder="What needs to be done?"
+                                value={newSubtaskTitle}
+                                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Escape' && setIsAddingSubtask(false)}
+                             />
+                             <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="ghost" type="button" onClick={() => setIsAddingSubtask(false)}>Cancel</Button>
+                                <Button size="sm" type="submit">Add Sub-task</Button>
+                             </div>
+                        </form>
+                    ) : (
+                        <button 
+                            onClick={() => setIsAddingSubtask(true)}
+                            className="mt-2 w-full flex items-center gap-2 p-2 rounded-lg border border-dashed border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all text-sm font-medium"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                            Add a sub-task
+                        </button>
+                    )}
+                 </div>
               </section>
             </div>
 
@@ -148,12 +339,19 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave, onDelete }: Tas
               <section className="pt-4 space-y-2">
                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Actions</h4>
                  <Button 
-                    variant="secondary" 
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    variant="danger" 
+                    className="w-full justify-start"
                     onClick={() => {
-                        if(confirm('Are you sure you want to delete this task?')) {
-                            onDelete(task.id);
-                            onClose();
+                        if(confirm('Are you sure? This will delete this task and ALL its nested sub-tasks.')) {
+                            onDelete(currentTask.id);
+                            if (taskStack.length > 1) {
+                                goBack();
+                                // We also need to notify the new parent that its children changed
+                                // But since we already called onDelete which is handleDeleteTask 
+                                // that updates the board state recursively, we just need to ensure 
+                                // subtasks local state is refreshed if we stay in modal.
+                                // Actually handleDeleteTask will close the modal if it matches current.
+                            }
                         }
                     }}
                  >
@@ -165,8 +363,8 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave, onDelete }: Tas
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/30 rounded-b-xl">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/30 rounded-b-xl shrink-0">
+          <Button variant="secondary" onClick={onClose}>Close</Button>
           <Button onClick={handleSave} isLoading={isSaving} className="px-8">Save Changes</Button>
         </div>
       </div>

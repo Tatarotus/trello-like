@@ -16,6 +16,10 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
       lists: {
         with: {
           tasks: {
+            where: (tasks, { isNull }) => isNull(tasks.parentId),
+            with: {
+              children: true
+            },
             orderBy: (tasks, { asc }) => [asc(tasks.order)]
           }
         },

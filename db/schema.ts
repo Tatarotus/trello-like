@@ -35,8 +35,10 @@ export const tasks = sqliteTable('tasks', {
   description: text('description').default(''),
   dueDate: text('due_date'),
   labels: text('labels', { mode: 'json' }).$type<string[]>().default([]),
+  completed: integer('completed', { mode: 'boolean' }).default(false),
   order: integer('order').notNull(),
   listId: text('list_id').notNull().references(() => lists.id),
+  parentId: text('parent_id').references((): any => tasks.id, { onDelete: 'cascade' }),
 });
 
 // Relations
@@ -68,9 +70,17 @@ export const listsRelations = relations(lists, ({ one, many }) => ({
   tasks: many(tasks),
 }));
 
-export const tasksRelations = relations(tasks, ({ one }) => ({
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
   list: one(lists, {
     fields: [tasks.listId],
     references: [lists.id],
+  }),
+  parent: one(tasks, {
+    fields: [tasks.parentId],
+    references: [tasks.id],
+    relationName: 'subtasks',
+  }),
+  children: many(tasks, {
+    relationName: 'subtasks',
   }),
 }));

@@ -172,7 +172,7 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Requires 5px movement to start drag, prevents accidental drags on clicks
+        distance: 8, // Requires 8px movement to start drag, prevents accidental drags on clicks
       },
     })
   );
@@ -211,19 +211,21 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
 
   const handleDeleteTask = async (taskId: string) => {
     const oldLists = [...lists];
-    // Find listId for this task
-    let listId = "";
-    for (const list of lists) {
-        if (list.tasks.some(t => t.id === taskId)) {
-            listId = list.id;
-            break;
+    
+    setLists(prev => prev.map(list => ({
+      ...list,
+      tasks: list.tasks.filter(t => {
+        if (t.id === taskId) return false;
+        if (t.children) {
+          t.children = t.children.filter(c => c.id !== taskId);
         }
-    }
-    if (!listId) return;
+        return true;
+      })
+    })));
 
-    setLists(prev => prev.map(list => list.id === listId ? { ...list, tasks: list.tasks.filter(t => t.id !== taskId) } : list));
     const result = await deleteTask(taskId);
     if (!result.success) setLists(oldLists); 
+    if (selectedTask?.id === taskId) setSelectedTask(null);
   };
 
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
@@ -231,13 +233,33 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
     
     setLists(prev => prev.map(list => ({
         ...list,
-        tasks: list.tasks.map(task => task.id === taskId ? { ...task, ...updates } : task)
+        tasks: list.tasks.map(task => {
+            if (task.id === taskId) return { ...task, ...updates };
+            if (task.children) {
+                const newChildren = task.children.map(c => c.id === taskId ? { ...c, ...updates } : c);
+                // If the update is adding a child (we'll handle this separately though)
+                return { ...task, children: newChildren };
+            }
+            return task;
+        })
     })));
 
     const result = await updateTask(taskId, updates);
     if (!result.success) {
         setLists(oldLists);
     }
+  };
+
+  const handleSubtasksChange = (parentId: string, newSubtasks: Task[]) => {
+    setLists(prev => prev.map(list => ({
+        ...list,
+        tasks: list.tasks.map(task => {
+            if (task.id === parentId) {
+                return { ...task, children: newSubtasks };
+            }
+            return task;
+        })
+    })));
   };
 
   const handleRenameList = async (listId: string, newTitle: string) => {
@@ -479,6 +501,7 @@ export default function KanbanBoard({ initialLists, boardId }: { initialLists: L
             onClose={() => setSelectedTask(null)}
             onSave={handleUpdateTask}
             onDelete={handleDeleteTask}
+            onSubtasksChange={handleSubtasksChange}
           />
       )}
     </DndContext>
