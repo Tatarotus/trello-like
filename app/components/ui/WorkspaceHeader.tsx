@@ -32,9 +32,14 @@ export function WorkspaceHeader({ id, name, slug, description, backHref, backLab
       description: newDescription, 
       slug: newSlug 
     });
-    if (result.success) {
+    if (result.success && result.workspace) {
       setIsSettingsOpen(false);
-      router.refresh();
+      // Gentle redirect to new URL if slug changed
+      if (result.workspace.slug !== slug) {
+        router.push(`/${result.workspace.slug}`);
+      } else {
+        router.refresh();
+      }
     }
     setIsSaving(false);
   };

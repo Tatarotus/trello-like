@@ -115,3 +115,7 @@ See `todo.md` for full list.
 npm run dev          # start dev server
 npm run build        # type check + build
 npx drizzle-kit push # DB migrations
+
+
+REMEMBER: Run all tests and verify the server before committing.
+
