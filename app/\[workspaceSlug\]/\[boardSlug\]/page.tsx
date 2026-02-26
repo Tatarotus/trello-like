@@ -1,18 +1,40 @@
-import KanbanBoard from "../../components/KanbanBoard";
+import KanbanBoard from "../../../components/KanbanBoard";
 import { db } from "@/db";
 import { getSession } from "@/lib/session";
-import { boards } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { boards, workspaces } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import Link from "next/link";
 
-export default async function BoardPage({ params }: { params: Promise<{ boardId: string }> }) {
-  const { boardId } = await params;
+export default async function BoardPage({ params }: { params: Promise<{ workspaceSlug: string, boardSlug: string }> }) {
+  const { workspaceSlug, boardSlug } = await params;
   const session = await getSession();
 
+  if (!session) {
+      return (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+              <h1 className="text-xl font-medium text-gray-900">Unauthorized</h1>
+              <Link href="/login" className="text-gray-500 hover:text-gray-900 mt-2 text-sm">Login to continue</Link>
+          </div>
+      );
+  }
+
+  // Find workspace first to ensure user owns it
+  const workspace = await db.query.workspaces.findFirst({
+    where: and(eq(workspaces.slug, workspaceSlug), eq(workspaces.userId, session.userId))
+  });
+
+  if (!workspace) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <h1 className="text-xl font-medium text-gray-900">Workspace not found</h1>
+        <Link href="/" className="text-gray-500 hover:text-gray-900 mt-2 text-sm">Go back to Workspaces</Link>
+      </div>
+    );
+  }
+
   const board = await db.query.boards.findFirst({
-    where: eq(boards.id, boardId),
+    where: and(eq(boards.slug, boardSlug), eq(boards.workspaceId, workspace.id)),
     with: {
-      workspace: true,
       lists: {
         with: {
           tasks: {
@@ -28,16 +50,11 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
     }
   });
 
-  // Verify the user owns the parent workspace
-  if (!board || board.workspace?.userId !== session?.userId) {
-    return <div>Board not found or unauthorized</div>;
-  }
-
   if (!board) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <h1 className="text-xl font-medium text-gray-900">Board not found</h1>
-        <Link href="/" className="text-gray-500 hover:text-gray-900 mt-2 text-sm">Go back to Workspaces</Link>
+        <Link href={`/${workspaceSlug}`} className="text-gray-500 hover:text-gray-900 mt-2 text-sm">Back to Workspace</Link>
       </div>
     );
   }
@@ -47,10 +64,10 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
       <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between z-10 shrink-0">
         <div className="flex items-center gap-2.5">
           <Link 
-            href={`/workspace/${board.workspaceId}`} 
+            href={`/${workspaceSlug}`} 
             className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
           >
-            {board.workspace?.name}
+            {workspace.name}
           </Link>
           <span className="text-gray-300">/</span>
           <h1 className="text-sm font-semibold text-gray-900">{board.name}</h1>
@@ -66,7 +83,7 @@ export default async function BoardPage({ params }: { params: Promise<{ boardId:
       </header>
       
       <div className="flex-1 overflow-hidden relative">
-        <KanbanBoard initialLists={board.lists} boardId={boardId} />
+        <KanbanBoard initialLists={board.lists} boardId={board.id} />
       </div>
     </main>
   );

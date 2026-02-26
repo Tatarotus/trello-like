@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { db } from '../db';
-import { workspaces } from '../db/schema';
+import { workspaces, boards } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 function slugify(text: string) {
@@ -15,12 +15,24 @@ function slugify(text: string) {
 
 async function fixSlugs() {
   console.log("Fixing missing slugs...");
-  const existing = await db.query.workspaces.findMany();
-  for (const w of existing) {
+  
+  // Workspaces
+  const existingWorkspaces = await db.query.workspaces.findMany();
+  for (const w of existingWorkspaces) {
     if (!w.slug) {
       const slug = `${slugify(w.name)}-${Math.random().toString(36).substring(2, 7)}`;
-      console.log(`Setting slug for ${w.name} to ${slug}`);
+      console.log(`Setting slug for workspace ${w.name} to ${slug}`);
       await db.update(workspaces).set({ slug }).where(eq(workspaces.id, w.id));
+    }
+  }
+
+  // Boards
+  const existingBoards = await db.query.boards.findMany();
+  for (const b of existingBoards) {
+    if (!b.slug) {
+      const slug = `${slugify(b.name)}-${Math.random().toString(36).substring(2, 7)}`;
+      console.log(`Setting slug for board ${b.name} to ${slug}`);
+      await db.update(boards).set({ slug }).where(eq(boards.id, b.id));
     }
   }
 }

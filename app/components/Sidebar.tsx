@@ -34,7 +34,7 @@ export async function Sidebar() {
           {userWorkspaces.map((ws) => (
             <div key={ws.id} className="space-y-1">
               <Link 
-                href={`/workspace/${ws.id}`} 
+                href={`/${ws.slug}`} 
                 className="block px-2 py-1.5 text-sm font-semibold text-gray-900 rounded-md hover:bg-gray-200/50 transition-colors"
               >
                 {ws.name}
@@ -45,7 +45,7 @@ export async function Sidebar() {
                   {ws.boards.map(board => (
                     <Link 
                       key={board.id} 
-                      href={`/board/${board.id}`} 
+                      href={`/${ws.slug}/${board.slug}`} 
                       className="block px-2 py-1.5 text-sm text-gray-600 rounded-md hover:bg-gray-200/50 hover:text-gray-900 transition-colors truncate"
                     >
                       {board.name}

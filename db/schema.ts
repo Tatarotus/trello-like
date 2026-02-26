@@ -20,6 +20,7 @@ export const workspaces = sqliteTable('workspaces', {
 export const boards = sqliteTable('boards', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  slug: text('slug').notNull().unique(), // Unique slug for URLs
   workspaceId: text('workspace_id').notNull().references(() => workspaces.id),
 });
 

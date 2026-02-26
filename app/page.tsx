@@ -58,7 +58,7 @@ export default async function Home() {
               name={ws.name}
               count={ws.boards.length}
               countLabel={ws.boards.length === 1 ? 'board' : 'boards'}
-              href={`/workspace/${ws.id}`}
+              href={`/${ws.slug}`}
               deleteAction={async () => {
                 "use server"
                 await deleteWorkspace(ws.id);

@@ -1,22 +1,31 @@
 import Link from "next/link";
 import { db } from "@/db";
-import { createBoard, deleteBoard } from "../../actions/board-actions";
+import { createBoard, deleteBoard } from "../actions/board-actions";
 import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/session";
 import { workspaces } from "@/db/schema";
-import { Container } from "../../components/ui/Container";
-import { BoardCard } from "../../components/ui/BoardCard";
-import { WorkspaceHeader } from "../../components/ui/WorkspaceHeader";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
+import { Container } from "../components/ui/Container";
+import { BoardCard } from "../components/ui/BoardCard";
+import { WorkspaceHeader } from "../components/ui/WorkspaceHeader";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
 
-export default async function WorkspacePage({ params }: { params: Promise<{ workspaceId: string }> }) {
+export default async function WorkspacePage({ params }: { params: Promise<{ workspaceSlug: string }> }) {
   const session = await getSession();
-  const { workspaceId } = await params;
+  const { workspaceSlug } = await params;
+
+  if (!session) {
+      return (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+              <h1 className="text-xl font-medium text-gray-900">Unauthorized</h1>
+              <Link href="/login" className="text-gray-500 hover:text-gray-900 mt-2 text-sm">Login to continue</Link>
+          </div>
+      );
+  }
 
   const workspace = await db.query.workspaces.findFirst({
-    where: and(eq(workspaces.id, workspaceId), eq(workspaces.userId, session!.userId)),
+    where: and(eq(workspaces.slug, workspaceSlug), eq(workspaces.userId, session.userId)),
     with: { boards: true }
   });
 
@@ -33,8 +42,8 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
     "use server"
     const name = formData.get("name") as string;
     if (!name) return;
-    await createBoard(name, workspaceId);
-    revalidatePath(`/workspace/${workspaceId}`);
+    await createBoard(name, workspace!.id);
+    revalidatePath(`/${workspaceSlug}`);
   }
 
   return (
@@ -55,11 +64,11 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
               key={board.id}
               id={board.id}
               name={board.name}
-              href={`/board/${board.id}`}
+              href={`/${workspaceSlug}/${board.slug}`}
               deleteAction={async () => {
                 "use server"
                 await deleteBoard(board.id);
-                revalidatePath(`/workspace/${workspaceId}`);
+                revalidatePath(`/${workspaceSlug}`);
               }}
               variant="board"
             />
