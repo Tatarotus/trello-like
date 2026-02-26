@@ -75,10 +75,10 @@ export async function deleteTask(taskId: string) {
 
 export async function updateTask(taskId: string, updates: { 
   title?: string, 
-  description?: string, 
+  description?: string | null, 
   dueDate?: string | null, 
-  labels?: string[],
-  completed?: boolean
+  labels?: string[] | null,
+  completed?: boolean | null
 }) {
   const session = await getSession();
   if (!session) return { success: false, error: "Unauthorized" };

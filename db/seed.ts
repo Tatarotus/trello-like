@@ -26,6 +26,7 @@ async function seed() {
     id: workspaceId,
     userId: userId, // <-- This was the missing piece!
     name: 'My Workspace',
+    slug: 'my-workspace',
     description: 'A place for my projects',
   });
 
@@ -34,6 +35,7 @@ async function seed() {
   await db.insert(boards).values({
     id: boardId,
     name: 'My Board',
+    slug: 'my-board',
     workspaceId: workspaceId,
   });
 

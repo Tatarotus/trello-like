@@ -1,4 +1,4 @@
-import KanbanBoard from "../../../components/KanbanBoard";
+import KanbanBoard from "../../components/KanbanBoard";
 import { db } from "@/db";
 import { getSession } from "@/lib/session";
 import { boards, workspaces } from "@/db/schema";

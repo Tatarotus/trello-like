@@ -25,8 +25,10 @@ type Task = {
   description: string | null;
   dueDate: string | null;
   labels: string[] | null;
+  completed?: boolean | null;
   order: number; 
-  listId: string 
+  listId: string;
+  children?: Task[];
 };
 type List = { id: string; title: string; order: number; tasks: Task[] };
 

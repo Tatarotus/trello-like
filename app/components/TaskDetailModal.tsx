@@ -11,10 +11,11 @@ interface Task {
   description: string | null;
   dueDate: string | null;
   labels: string[] | null;
-  completed?: boolean;
+  completed?: boolean | null;
   order: number;
   listId: string;
   parentId?: string | null;
+  children?: Task[];
 }
 
 interface TaskDetailModalProps {
