@@ -40,7 +40,9 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
   return (
     <main className="min-h-screen bg-gray-50 pb-24 font-sans">
       <WorkspaceHeader 
+        id={workspace.id}
         name={workspace.name} 
+        slug={workspace.slug}
         description={workspace.description || "Project management and team collaboration."}
         backHref="/"
         backLabel="All Workspaces"

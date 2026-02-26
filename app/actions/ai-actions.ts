@@ -71,6 +71,51 @@ async function callSambaAI(systemPrompt: string, userPrompt: string) {
   throw new Error(lastError?.message || "AI models unavailable.");
 }
 
+async function getTaskContext(taskId: string) {
+  return await db.query.tasks.findFirst({
+    where: eq(tasks.id, taskId),
+    with: {
+      list: {
+        with: {
+          board: {
+            with: {
+              workspace: {
+                with: {
+                  boards: true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function formatContextPrompt(task: any) {
+  const workspace = task.list.board.workspace;
+  const board = task.list.board;
+  const otherBoards = workspace.boards
+    .filter((b: any) => b.id !== board.id)
+    .map((b: any) => b.name)
+    .join(', ');
+  
+  return `Workspace Context:
+- Name: ${workspace.name}
+- Slug: ${workspace.slug}
+- Description: ${workspace.description || "N/A"}
+- Other Boards in Workspace: ${otherBoards || "None"}
+
+Board Context:
+- Name: ${board.name}
+
+Task Context:
+- Title: ${task.title}
+- Current Description: ${task.description || "None"}
+- Current Labels: ${task.labels?.join(', ') || "None"}
+- Due Date: ${task.dueDate || "Not set"}`;
+}
+
 /**
  * Returns proposed optimization data WITHOUT saving to database.
  */
@@ -79,10 +124,10 @@ export async function aiMakeTaskPerfect(taskId: string) {
   if (!session) return { success: false, error: "Unauthorized" };
 
   try {
-    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+    const task = await getTaskContext(taskId);
     if (!task) return { success: false, error: "Task not found" };
 
-    const systemPrompt = `You are a project optimization expert. Propose a professional title, expanded description, 3-5 labels, and 4-6 sub-tasks.
+    const systemPrompt = `You are a project optimization expert. Use the provided workspace and board context to tailor your suggestions. Propose a professional title, expanded description, 3-5 labels, and 4-6 sub-tasks.
 Respond with NOTHING except a JSON object:
 {
   "title": "Optimized Title",
@@ -92,7 +137,7 @@ Respond with NOTHING except a JSON object:
   "suggestedDueDate": "YYYY-MM-DD"
 }`;
 
-    const userPrompt = `Task: ${task.title}\nDescription: ${task.description}`;
+    const userPrompt = formatContextPrompt(task);
     const response = await callSambaAI(systemPrompt, userPrompt);
     const data = extractJSON(response);
 
@@ -110,11 +155,11 @@ export async function aiRewriteTask(taskId: string, tone: 'professional' | 'conc
   if (!session) return { success: false, error: "Unauthorized" };
 
   try {
-    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+    const task = await getTaskContext(taskId);
     if (!task) return { success: false, error: "Task not found" };
 
-    const systemPrompt = `Rewrite this task to be ${tone}. Respond with NOTHING except JSON: { "title": "...", "description": "..." }`;
-    const userPrompt = `Title: ${task.title}\nDescription: ${task.description}`;
+    const systemPrompt = `Rewrite this task to be ${tone}. Use the provided workspace and board context for tone and relevance. Respond with NOTHING except JSON: { "title": "...", "description": "..." }`;
+    const userPrompt = formatContextPrompt(task);
     const response = await callSambaAI(systemPrompt, userPrompt);
     const data = extractJSON(response);
 
@@ -129,11 +174,11 @@ export async function aiWriteStatusUpdate(taskId: string) {
   if (!session) return { success: false, error: "Unauthorized" };
 
   try {
-    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+    const task = await getTaskContext(taskId);
     if (!task) return { success: false, error: "Task not found" };
 
-    const systemPrompt = `Write a professional status update. Respond with NOTHING except JSON: { "update": "markdown text" }`;
-    const userPrompt = `Task: ${task.title}\nDescription: ${task.description}\nLabels: ${task.labels?.join(', ')}`;
+    const systemPrompt = `Write a professional status update. Use the workspace and board context to make it relevant to the project. Respond with NOTHING except JSON: { "update": "markdown text" }`;
+    const userPrompt = formatContextPrompt(task);
     const response = await callSambaAI(systemPrompt, userPrompt);
     const data = extractJSON(response);
 
@@ -151,11 +196,11 @@ export async function aiSuggestTags(taskId: string) {
   if (!session) return { success: false, error: "Unauthorized" };
 
   try {
-    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+    const task = await getTaskContext(taskId);
     if (!task) return { success: false, error: "Task not found" };
 
-    const systemPrompt = `Suggest 4-7 relevant labels. Map urgency to "Red", "Yellow", "Green", "Blue", or "Purple". Respond with NOTHING except JSON: {"tags": ["Tag1", ...]}`;
-    const userPrompt = `Title: ${task.title}\nDescription: ${task.description}\nDue: ${task.dueDate}`;
+    const systemPrompt = `Suggest 4-7 relevant labels. Map urgency to "Red", "Yellow", "Green", "Blue", or "Purple". Use workspace/board context for relevance. Respond with NOTHING except JSON: {"tags": ["Tag1", ...]}`;
+    const userPrompt = formatContextPrompt(task);
     const response = await callSambaAI(systemPrompt, userPrompt);
     const { tags } = extractJSON(response);
 

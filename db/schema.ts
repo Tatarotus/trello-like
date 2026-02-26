@@ -13,6 +13,7 @@ export const workspaces = sqliteTable('workspaces', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id), // Link to user
   name: text('name').notNull(),
+  slug: text('slug').notNull().unique(), // Unique slug for URLs
   description: text('description'),
 });
 
